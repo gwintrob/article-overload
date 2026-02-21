@@ -16,7 +16,12 @@ chrome.action.onClicked.addListener(async (tab) => {
   chrome.tabs.sendMessage(tab.id, { type: 'toggleSidebar' });
 });
 
+const ALLOWED_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929'];
+const MAX_TOKENS_CAP = 2048;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (sender.id !== chrome.runtime.id) return;
+
   if (message.type === 'getApiKey') {
     chrome.storage.local.get(['anthropic_api_key'], (result) => {
       sendResponse({ key: result.anthropic_api_key || null });
@@ -40,6 +45,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       try {
+        const model = ALLOWED_MODELS.includes(message.model) ? message.model : 'claude-opus-4-6';
+        const maxTokens = Math.min(Number(message.maxTokens) || 1024, MAX_TOKENS_CAP);
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -49,8 +56,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
-            model: message.model || 'claude-opus-4-6',
-            max_tokens: message.maxTokens || 1024,
+            model,
+            max_tokens: maxTokens,
             messages: message.messages,
           }),
         });

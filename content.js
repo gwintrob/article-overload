@@ -5,10 +5,12 @@
   const WPM = 238;
   const POST_URL_RE = /https:\/\/(x\.com|twitter\.com)\/\w+\/status\/\d+/;
 
+  const MAX_CACHE_ENTRIES = 50;
   let currentUrl = '';
   let sidebarHost = null;
   let shadowRoot = null;
   let closedForUrl = null;
+  let analysisInFlight = false;
 
   // ─── Styles ───────────────────────────────────────────────────────────
 
@@ -476,6 +478,19 @@
   function saveCache(url, data) {
     const key = cacheKey(url);
     chrome.storage.local.set({ [key]: { ...data, ts: Date.now() } });
+    evictOldCache();
+  }
+
+  function evictOldCache() {
+    chrome.storage.local.get(null, (all) => {
+      const cacheEntries = Object.entries(all)
+        .filter(([k]) => k.startsWith('cache:'))
+        .sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
+      if (cacheEntries.length > MAX_CACHE_ENTRIES) {
+        const toRemove = cacheEntries.slice(0, cacheEntries.length - MAX_CACHE_ENTRIES).map(([k]) => k);
+        chrome.storage.local.remove(toRemove);
+      }
+    });
   }
 
   // ─── DOM helpers ──────────────────────────────────────────────────────
@@ -581,7 +596,7 @@
     `;
     const input = container.querySelector('.api-key-input');
     const btn = container.querySelector('.save-key-btn');
-    input.addEventListener('input', () => { btn.disabled = !input.value.trim().startsWith('sk-'); });
+    input.addEventListener('input', () => { btn.disabled = input.value.trim().length < 10; });
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       btn.textContent = 'Saving...';
@@ -651,9 +666,10 @@
     if (reason) {
       const existing = section.querySelector('.score-reason');
       if (existing) existing.remove();
-      section.querySelector('.gauge-container').insertAdjacentHTML('beforeend',
-        `<div class="score-reason">${reason}</div>`
-      );
+      const reasonEl = document.createElement('div');
+      reasonEl.className = 'score-reason';
+      reasonEl.textContent = reason;
+      section.querySelector('.gauge-container').appendChild(reasonEl);
     }
   }
 
@@ -679,7 +695,14 @@
       const el = document.createElement('div');
       el.className = 'takeaway';
       el.style.animationDelay = `${i * 0.08}s`;
-      el.innerHTML = `<span class="takeaway-num">${i + 1}</span><span class="takeaway-text">${text}</span>`;
+      const num = document.createElement('span');
+      num.className = 'takeaway-num';
+      num.textContent = i + 1;
+      const txt = document.createElement('span');
+      txt.className = 'takeaway-text';
+      txt.textContent = text;
+      el.appendChild(num);
+      el.appendChild(txt);
       section.appendChild(el);
     });
   }
@@ -689,7 +712,10 @@
     if (!target) return;
     const loading = target.querySelector('.loading');
     if (loading) loading.remove();
-    target.insertAdjacentHTML('beforeend', `<div class="error-msg">${message}</div>`);
+    const errEl = document.createElement('div');
+    errEl.className = 'error-msg';
+    errEl.textContent = message;
+    target.appendChild(errEl);
   }
 
   // ─── API Calls ────────────────────────────────────────────────────────
@@ -753,6 +779,7 @@ ${text}`,
     }
 
     if (closedForUrl === window.location.href) return;
+    if (analysisInFlight) return;
 
     let text;
     try {
@@ -797,26 +824,31 @@ ${text}`,
     renderTakeawaysPlaceholder(container);
 
     const results = { summary: null, slop: null };
+    analysisInFlight = true;
 
-    const slopPromise = fetchSlopScore(text)
-      .then((data) => {
-        results.slop = data;
-        updateSlopScore(data.score, data.reason);
-      })
-      .catch((err) => renderError(container, `Slop analysis failed: ${err.message}`, 'slop-section'));
+    try {
+      const slopPromise = fetchSlopScore(text)
+        .then((data) => {
+          results.slop = data;
+          updateSlopScore(data.score, data.reason);
+        })
+        .catch((err) => renderError(container, `Slop analysis failed: ${err.message}`, 'slop-section'));
 
-    const summaryPromise = fetchSummary(text)
-      .then((takeaways) => {
-        results.summary = takeaways;
-        updateTakeaways(takeaways);
-      })
-      .catch((err) => renderError(container, `Summary failed: ${err.message}`, 'takeaways-section'));
+      const summaryPromise = fetchSummary(text)
+        .then((takeaways) => {
+          results.summary = takeaways;
+          updateTakeaways(takeaways);
+        })
+        .catch((err) => renderError(container, `Summary failed: ${err.message}`, 'takeaways-section'));
 
-    await Promise.allSettled([slopPromise, summaryPromise]);
+      await Promise.allSettled([slopPromise, summaryPromise]);
 
-    // Cache successful results
-    if (results.summary && results.slop) {
-      saveCache(window.location.href, results);
+      // Cache successful results
+      if (results.summary && results.slop) {
+        saveCache(window.location.href, results);
+      }
+    } finally {
+      analysisInFlight = false;
     }
   }
 
