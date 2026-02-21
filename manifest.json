@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Article Overload",
-  "version": "1.0",
-  "description": "AI analysis for X long-form articles",
+  "version": "1.0.0",
+  "description": "Get word count, read time, AI-detection score, and key takeaways for long-form X posts. Powered by Claude.",
   "permissions": ["storage", "contextMenus"],
   "icons": {
     "16": "icon-16.png",

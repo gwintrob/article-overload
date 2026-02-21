@@ -1,3 +1,5 @@
 venv/
 .env*
 .playwright*
+.DS_Store
+*.zip

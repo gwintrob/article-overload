@@ -2,6 +2,8 @@
 
 Chrome extension that analyzes long-form X posts using the Anthropic API.
 
+![Article Overload sidebar showing word count, Slop-o-Meter gauge, and key takeaways for an X post](screenshot.png)
+
 When you visit a post, a sidebar slides in showing:
 
 - **Word count & read time**
@@ -32,4 +34,4 @@ Right-click the extension icon and select **Remove API Key**.
 
 ## Privacy
 
-Your API key and cached results stay on your device. Post text is sent directly to the Anthropic API using your. No data is collected by the developer. See [PRIVACY.md](PRIVACY.md) for details.
+Your API key and cached results stay on your device. Post text is sent directly to the Anthropic API using your API key. No data is collected by the developer. See [PRIVACY.md](PRIVACY.md) for details.
