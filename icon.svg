@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!--
+    Claude-style sparkle/splat: thick rounded pill shapes radiating from center.
+    Varying lengths, slightly irregular spacing for organic feel.
+  -->
+  <g fill="#000" transform="translate(64,64)">
+    <rect x="-5"  y="-62" width="10" height="42" rx="5" transform="rotate(0)"/>
+    <rect x="-4.5" y="-58" width="9"  height="38" rx="4.5" transform="rotate(40)"/>
+    <rect x="-5.5" y="-64" width="11" height="44" rx="5.5" transform="rotate(82)"/>
+    <rect x="-5"  y="-56" width="10" height="36" rx="5" transform="rotate(125)"/>
+    <rect x="-4.5" y="-60" width="9"  height="40" rx="4.5" transform="rotate(162)"/>
+    <rect x="-5.5" y="-62" width="11" height="42" rx="5.5" transform="rotate(200)"/>
+    <rect x="-5"  y="-54" width="10" height="34" rx="5" transform="rotate(242)"/>
+    <rect x="-4.5" y="-60" width="9"  height="40" rx="4.5" transform="rotate(280)"/>
+    <rect x="-5"  y="-58" width="10" height="38" rx="5" transform="rotate(320)"/>
+  </g>
+</svg>

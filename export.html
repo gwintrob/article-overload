@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head><title>Export PNGs</title></head>
+<body>
+<canvas id="c"></canvas>
+<div id="status">Starting...</div>
+<div id="links"></div>
+<script>
+const sizes = [16, 32, 48, 128];
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const status = document.getElementById('status');
+const links = document.getElementById('links');
+
+async function exportAll() {
+  const resp = await fetch('icon.svg?v=5');
+  const svgText = await resp.text();
+
+  for (const size of sizes) {
+    canvas.width = size;
+    canvas.height = size;
+    ctx.clearRect(0, 0, size, size);
+
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    ctx.drawImage(img, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `icon-${size}.png`;
+    a.textContent = `icon-${size}.png`;
+    a.style.display = 'block';
+    a.style.margin = '8px';
+    links.appendChild(a);
+
+    // Store the data URL so we can grab it from Playwright
+    window[`icon${size}`] = dataUrl;
+  }
+  status.textContent = 'Done! All icons exported.';
+  window.exportDone = true;
+}
+
+exportAll();
+</script>
+</body>
+</html>
