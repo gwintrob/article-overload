@@ -763,16 +763,16 @@ ${text}`,
     if (!text) return;
 
     const words = wordCount(text);
+
+    if (words < MIN_WORDS) {
+      return;
+    }
+
     const container = createSidebar();
 
     const { key } = await sendMessage({ type: 'getApiKey' });
     if (!key) {
       renderApiKeyForm(container, () => { closedForUrl = null; analyzePost(); });
-      return;
-    }
-
-    if (words < MIN_WORDS) {
-      renderShortPost(container);
       return;
     }
 
