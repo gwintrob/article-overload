@@ -495,11 +495,12 @@
 
   // ─── DOM helpers ──────────────────────────────────────────────────────
 
-  const CONTENT_SELECTORS = [
+  const ARTICLE_SELECTORS = [
     '[data-testid="longformRichTextComponent"]',
     '[data-testid="twitterArticleRichTextView"]',
-    '[data-testid="tweetText"]',
   ];
+  const TWEET_TEXT_SELECTOR = '[data-testid="tweetText"]';
+  const ALL_CONTENT_SELECTORS = [...ARTICLE_SELECTORS, TWEET_TEXT_SELECTOR];
 
   function waitForAnyElement(selectors, timeout = 8000) {
     return new Promise((resolve, reject) => {
@@ -518,10 +519,14 @@
     });
   }
 
+  function isArticlePage() {
+    return ARTICLE_SELECTORS.some((sel) => document.querySelector(sel));
+  }
+
   function extractArticleText() {
     const titleEl = document.querySelector('[data-testid="twitter-article-title"]');
     const title = titleEl ? titleEl.innerText.trim() : '';
-    for (const selector of CONTENT_SELECTORS) {
+    for (const selector of ALL_CONTENT_SELECTORS) {
       const el = document.querySelector(selector);
       if (el) {
         const body = el.innerText.trim();
@@ -783,7 +788,11 @@ ${text}`,
 
     let text;
     try {
-      await waitForAnyElement(CONTENT_SELECTORS);
+      await waitForAnyElement(ALL_CONTENT_SELECTORS);
+      if (!isArticlePage()) {
+        removeSidebar();
+        return;
+      }
       text = extractArticleText();
     } catch { return; }
 
